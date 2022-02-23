@@ -316,9 +316,6 @@ msgstr ""
 msgid "Are you sure you want to delete all selected motions?"
 msgstr ""
 
-msgid "Are you sure you want to delete all selected participants?"
-msgstr ""
-
 msgid "Are you sure you want to delete all speakers from this list of speakers?"
 msgstr ""
 
@@ -1068,9 +1065,6 @@ msgstr ""
 msgid "Do not forget to save your changes!"
 msgstr ""
 
-msgid "Do not set number"
-msgstr ""
-
 msgid "Do you really want to exit this page?"
 msgstr ""
 
@@ -1589,6 +1583,9 @@ msgstr ""
 msgid "Invite to conference room"
 msgstr ""
 
+msgid "Is a committee"
+msgstr ""
+
 msgid "Is active"
 msgstr ""
 
@@ -1760,6 +1757,9 @@ msgstr ""
 msgid "Meeting"
 msgstr ""
 
+msgid "Meeting specific information"
+msgstr ""
+
 msgid "Meetings"
 msgstr ""
 
@@ -1884,6 +1884,9 @@ msgid "Name of recommender"
 msgstr ""
 
 msgid "Name of recommender for statute amendments"
+msgstr ""
+
+msgid "Natural person"
 msgstr ""
 
 msgid "Needs review"
@@ -2048,6 +2051,9 @@ msgstr ""
 msgid "No users with email {0} found."
 msgstr ""
 
+msgid "No verbose name is defined"
+msgstr ""
+
 msgid "None"
 msgstr ""
 
@@ -2188,6 +2194,9 @@ msgstr ""
 msgid "Organization"
 msgstr ""
 
+msgid "Organization specific information"
+msgstr ""
+
 msgid "Origin"
 msgstr ""
 
@@ -2284,6 +2293,9 @@ msgid "Permissions"
 msgstr ""
 
 msgid "Permit"
+msgstr ""
+
+msgid "Personal information"
 msgstr ""
 
 msgid "Personal note"
@@ -2398,6 +2410,9 @@ msgid "Projector not found"
 msgstr ""
 
 msgid "Projectors"
+msgstr ""
+
+msgid "Pronoun"
 msgstr ""
 
 msgid "Public"
@@ -2678,6 +2693,9 @@ msgid "Set motion block"
 msgstr ""
 
 msgid "Set natural person ..."
+msgstr ""
+
+msgid "Set number"
 msgstr ""
 
 msgid "Set or remove motion forwarding from the selected committees to:"
@@ -3062,12 +3080,21 @@ msgstr ""
 msgid "Thereof point of orders"
 msgstr ""
 
+msgid "These accounts will be deleted:"
+msgstr ""
+
+msgid "These accounts will be removed from the meeting:"
+msgstr ""
+
 msgid "This account has relations to meetings or committees"
 msgstr ""
 
 msgid ""
 "This account is not linked as candidate, submitter or speaker in any "
 "meeting and is not manager of any committee"
+msgstr ""
+
+msgid "This account will only be removed from this meeting"
 msgstr ""
 
 msgid "This ballot contains deleted users."
@@ -3169,6 +3196,9 @@ msgid "Touch the book icon to enter text"
 msgstr ""
 
 msgid "Translation"
+msgstr ""
+
+msgid "Type"
 msgstr ""
 
 msgid "Undone"
@@ -3552,6 +3582,9 @@ msgstr ""
 msgid "could not be created"
 msgstr ""
 
+msgid "could not be defined"
+msgstr ""
+
 msgid "created"
 msgstr ""
 
@@ -3601,6 +3634,9 @@ msgid "green"
 msgstr ""
 
 msgid "grey"
+msgstr ""
+
+msgid "has been imported"
 msgstr ""
 
 msgid "has saved his work on this motion."
@@ -3741,6 +3777,9 @@ msgstr ""
 msgid "submitted"
 msgstr ""
 
+msgid "successfully forwarded"
+msgstr ""
+
 msgid "supporters"
 msgstr ""
 
@@ -3757,6 +3796,15 @@ msgid "version"
 msgstr ""
 
 msgid "will be created"
+msgstr ""
+
+msgid "will be defined"
+msgstr ""
+
+msgid "will be imported"
+msgstr ""
+
+msgid "will be referenced"
 msgstr ""
 
 msgid "with filter"

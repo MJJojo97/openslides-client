@@ -2,9 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import { ActiveMeetingService } from 'app/core/core-services/active-meeting.service';
 import { HistoryService } from 'app/core/core-services/history.service';
-import { OfflineBroadcastService } from 'app/core/core-services/offline-broadcast.service';
 import { OperatorService } from 'app/core/core-services/operator.service';
 import { TimeTravelService } from 'app/core/core-services/time-travel.service';
 import { PollRepositoryService } from 'app/core/repositories/polls/poll-repository.service';
@@ -47,7 +45,7 @@ export class SiteComponent extends BaseComponent implements OnInit {
     }
 
     public get meeting(): ViewMeeting {
-        return this.activeMeeting.meeting;
+        return this.activeMeeting;
     }
 
     public get canSeeChatObservable(): Observable<boolean> {
@@ -60,20 +58,10 @@ export class SiteComponent extends BaseComponent implements OnInit {
 
     /**
      * Constructor
-     * @param route
-     * @param operator
-     * @param vp
-     * @param translate
-     * @param dialog
-     * @param mainMenuService
-     * @param historyService
-     * @param timeTravel
      */
     public constructor(
         componentServiceCollector: ComponentServiceCollector,
         protected translate: TranslateService,
-        _offlineBroadcastService: OfflineBroadcastService,
-        private activeMeeting: ActiveMeetingService,
         private router: Router,
         public vp: ViewportService,
         public dialog: MatDialog,

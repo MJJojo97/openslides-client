@@ -76,10 +76,7 @@ export class AutoupdateService {
     private _mutex = new Mutex();
 
     /**
-     * Constructor to create the AutoupdateService. Calls the constructor of the parent class.
-     * @param websocketService
-     * @param DS
-     * @param modelMapper
+     * Constructor to create the AutoupdateService.
      */
     public constructor(
         private DS: DataStoreService,
@@ -119,7 +116,7 @@ export class AutoupdateService {
             { bodyFn: () => [request] }
         );
         const { data, stream } = await httpStream.toPromise();
-        await this.handleAutoupdate(data, stream.id);
+        await this.handleAutoupdate({ autoupdateData: data, id: stream.id, description });
     }
 
     /**
@@ -142,28 +139,45 @@ export class AutoupdateService {
     }
 
     private async request(request: ModelRequest, description: string): Promise<ModelSubscription> {
-        const httpStream = this.httpStreamService.create(
-            AUTOUPDATE_DEFAULT_ENDPOINT,
-            { onMessage: (data, stream) => this.handleAutoupdate(data, stream.id), description },
-            { bodyFn: () => [request] }
-        );
-        const closeFn = this.communicationManager.registerStream(httpStream);
+        const buildStreamFn = (streamId: number) =>
+            this.httpStreamService.create(
+                AUTOUPDATE_DEFAULT_ENDPOINT,
+                {
+                    onMessage: (data, stream) =>
+                        this.handleAutoupdate({ autoupdateData: data, id: stream.id, description }),
+                    description,
+                    id: streamId
+                },
+                { bodyFn: () => [request] }
+            );
+        const { closeFn, id } = this.communicationManager.registerStreamBuildFn(buildStreamFn);
         return {
-            id: httpStream.id,
+            id,
             close: () => {
                 closeFn();
-                delete this._activeRequestObjects[httpStream.id];
+                delete this._activeRequestObjects[id];
             }
         };
     }
 
-    private async handleAutoupdate(autoupdateData: AutoupdateModelData, id: number): Promise<void> {
+    private async handleAutoupdate({
+        autoupdateData,
+        id,
+        description
+    }: {
+        autoupdateData: AutoupdateModelData;
+        id: number;
+        description?: string;
+    }): Promise<void> {
         const modelData = autoupdateFormatToModelData(autoupdateData);
-        console.log(`autoupdate: from stream`, id, modelData, `raw data:`, autoupdateData);
+        console.log(`autoupdate: from stream ${description}`, id, modelData, `raw data:`, autoupdateData);
         const fullListUpdateCollections = {};
         for (const key of Object.keys(autoupdateData)) {
             const data = key.split(`/`);
             const collectionRelation = `${data[0]}/${data[2]}`;
+            if (!this._activeRequestObjects[id]) {
+                continue;
+            }
             if (this._activeRequestObjects[id].getFullListUpdateCollectionRelations().includes(collectionRelation)) {
                 fullListUpdateCollections[
                     this._activeRequestObjects[id].getForeignCollectionByRelation(collectionRelation)

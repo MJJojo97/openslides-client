@@ -71,8 +71,8 @@ export class AgendaFilterListService extends BaseFilterListService<ViewAgendaIte
                 options: this.createVisibilityFilterOptions()
             },
             {
-                label: `Type`,
-                property: `collection`,
+                label: this.translate.instant(`Type`),
+                property: `getContentObjectCollection`,
                 options: [
                     { label: this.translate.instant(`Motions`), condition: Motion.COLLECTION },
                     { label: this.translate.instant(`Topics`), condition: Topic.COLLECTION },

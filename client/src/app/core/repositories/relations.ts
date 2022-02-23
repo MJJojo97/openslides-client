@@ -146,6 +146,12 @@ export const RELATIONS: Relation[] = [
     }),
     ...makeM2O({
         OViewModel: ViewOrganization,
+        MViewModel: ViewMeeting,
+        OField: `archived_meetings`,
+        MField: `is_archived_in_organization`
+    }),
+    ...makeM2O({
+        OViewModel: ViewOrganization,
         MViewModel: ViewTheme,
         OField: `themes`,
         MField: `organization`,
@@ -228,6 +234,13 @@ export const RELATIONS: Relation[] = [
         otherViewModelField: `user`,
         otherViewModelIdField: `user_id`
     }),
+    // ...makeManyStructuredUsers2MRelation({
+    //     otherViewModel: ViewCommittee,
+    //     structuredField: `committee_management_levels`,
+    //     structuredIdField: `committee_$_management_level`,
+    //     otherViewModelField: `user_management_levels`,
+    //     otherViewModelIdField: `user_$_management_level`
+    // }),
     // ...makeOneStructuredGenericUser2MRelation({
     //     otherViewModel: ViewOption,
     //     structuredField: 'options',

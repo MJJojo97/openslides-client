@@ -78,10 +78,10 @@ interface ChannelIdResponse {
 
 const ICC_ENDPOINT = `icc`;
 
-const iccPath = `/system/icc`;
-const notifyPath = `${iccPath}/notify`;
-const publishPath = `${notifyPath}/publish`;
-const iccHealthPath = `${iccPath}/health`;
+const ICC_PATH = `/system/icc`;
+const NOTIFY_PATH = `${ICC_PATH}/notify`;
+const PUBLISH_PATH = `${NOTIFY_PATH}/publish`;
+const ICC_HEALTH_PATH = `${ICC_PATH}/health`;
 
 /**
  * Handles all incoming and outgoing notify messages via {@link WebsocketService}.
@@ -103,11 +103,10 @@ export class NotifyService {
     } = {};
 
     private channelId: string;
-    private commCloseFn: () => void;
+    private connectionClosingFn: () => void;
 
     /**
-     * Constructor to create the NotifyService. Registers itself to the WebsocketService.
-     * @param websocketService
+     * Constructor to create the NotifyService.
      */
     public constructor(
         private httpService: HttpService,
@@ -115,7 +114,7 @@ export class NotifyService {
         private operator: OperatorService,
         private activeMeetingIdService: ActiveMeetingIdService,
         private lifecycleService: LifecycleService,
-        private commManager: CommunicationManagerService,
+        private communicationManager: CommunicationManagerService,
         private httpEndpointService: HttpStreamEndpointService
     ) {
         /**
@@ -142,29 +141,31 @@ export class NotifyService {
 
         this.disconnect();
 
-        const iccMeeting = `${notifyPath}?meeting_id=${meetingId}`;
-        this.httpEndpointService.registerEndpoint(ICC_ENDPOINT, iccMeeting, iccHealthPath, HTTPMethod.GET);
-        const httpStream = this.httpStreamService.create<NotifyResponse<any> | ChannelIdResponse>(ICC_ENDPOINT, {
-            onMessage: (notify: NotifyResponse<any> | ChannelIdResponse) => {
-                if ((notify as ChannelIdResponse).channel_id) {
-                    this.handleChannelIdResponse(notify as ChannelIdResponse);
-                } else {
-                    this.handleNotifyResponse(notify as NotifyResponse<any>);
-                }
-            },
-            description: `NotifyService`
-        });
-        this.commCloseFn = this.commManager.registerStream(httpStream);
+        const iccMeeting = `${NOTIFY_PATH}?meeting_id=${meetingId}`;
+        this.httpEndpointService.registerEndpoint(ICC_ENDPOINT, iccMeeting, ICC_HEALTH_PATH, HTTPMethod.GET);
+        const buildStreamFn = () =>
+            this.httpStreamService.create<NotifyResponse<any> | ChannelIdResponse>(ICC_ENDPOINT, {
+                onMessage: (notify: NotifyResponse<any> | ChannelIdResponse) => {
+                    if ((notify as ChannelIdResponse).channel_id) {
+                        this.handleChannelIdResponse(notify as ChannelIdResponse);
+                    } else {
+                        this.handleNotifyResponse(notify as NotifyResponse<any>);
+                    }
+                },
+                description: `NotifyService`
+            });
+        const { closeFn } = this.communicationManager.registerStreamBuildFn(buildStreamFn);
+        this.connectionClosingFn = closeFn;
     }
 
     private disconnect(): void {
-        if (this.commCloseFn) {
+        if (this.connectionClosingFn) {
             try {
-                this.commCloseFn();
+                this.connectionClosingFn();
             } catch (e) {
                 console.warn(`Was not able to properly close previous ICC connection: `, e);
             }
-            this.commCloseFn = undefined;
+            this.connectionClosingFn = undefined;
         }
     }
 
@@ -252,7 +253,7 @@ export class NotifyService {
             notify.to_channels = channels;
         }
 
-        await this.httpService.post<unknown>(publishPath, notify);
+        await this.httpService.post<unknown>(PUBLISH_PATH, notify);
     }
 
     /**
@@ -263,8 +264,8 @@ export class NotifyService {
     }
 
     /**
-     * Returns an observable for a specific type of messages.
-     * @param name The name of all messages to observe.
+     * Returns an observable which gets updates for a specific topic.
+     * @param name The name of a topic to subscribe to.
      */
     public getMessageObservable<T>(name: string): Observable<NotifyResponse<T>> {
         if (!this.messageSubjects[name]) {

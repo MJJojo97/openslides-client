@@ -237,7 +237,10 @@ export class PollRepositoryService extends BaseRepositoryWithActiveMeeting<ViewP
             onehundred_percent_base: update.onehundred_percent_base,
             pollmethod: update.pollmethod,
             title: update.title,
-            backend: update.backend
+            backend: update.backend,
+            global_abstain: update.global_abstain,
+            global_no: update.global_no,
+            global_yes: update.global_yes
         };
         return this.sendActionToBackend(PollAction.UPDATE, payload);
     }
@@ -358,7 +361,6 @@ export class PollRepositoryService extends BaseRepositoryWithActiveMeeting<ViewP
                 break;
             case PollState.Published:
                 return this.publishPoll(poll);
-                break;
         }
     }
 

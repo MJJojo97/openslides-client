@@ -148,7 +148,6 @@ export interface Settings {
     users_allow_self_set_present: boolean;
     users_pdf_welcometitle: string;
     users_pdf_welcometext: string;
-    users_pdf_url: string;
     users_pdf_wlan_ssid: string;
     users_pdf_wlan_password: string;
     users_pdf_wlan_encryption: string;
@@ -227,6 +226,7 @@ export class Meeting extends BaseModel<Meeting> {
 
     public organization_tag_ids: Id[]; // (organization_tag/meeting_ids)[];
     public is_active_in_organization_id: Id; // (organization/active_meeting_ids)[];
+    public is_archived_organization_id: Id; // (organization/archived_meeting_ids)[];
 
     public constructor(input?: any) {
         super(Meeting.COLLECTION, input);

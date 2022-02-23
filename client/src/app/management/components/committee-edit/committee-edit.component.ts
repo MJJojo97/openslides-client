@@ -52,7 +52,7 @@ export class CommitteeEditComponent extends BaseModelContextComponent implements
     public editCommittee: ViewCommittee;
 
     private get managerIdCtrl(): AbstractControl {
-        return this.committeeForm.get(`manager_ids`);
+        return this.committeeForm.get(`user_$_management_level`);
     }
 
     private navigatedFrom: string | undefined;
@@ -146,6 +146,10 @@ export class CommitteeEditComponent extends BaseModelContextComponent implements
         this.navigateBack(this.committeeId);
     }
 
+    public getTransformPropagateFn(): (value?: any) => any {
+        return value => ({ [CML.can_manage]: value });
+    }
+
     /**
      * Function to automatically unselect a user from the manager-array. If the user remains as committee-manager,
      * then the backend would remain them as manager and remain them as user, too. If a user would only be added as
@@ -220,7 +224,7 @@ export class CommitteeEditComponent extends BaseModelContextComponent implements
     }
 
     private loadCommittee(id?: number): void {
-        this.requestModels(
+        this.subscribe(
             {
                 viewModelCtor: ViewCommittee,
                 ids: [id],
@@ -244,7 +248,7 @@ export class CommitteeEditComponent extends BaseModelContextComponent implements
             name: [``, Validators.required],
             description: [``],
             organization_tag_ids: [[]],
-            manager_ids: [[]],
+            user_$_management_level: [[]],
             forward_to_committee_ids: [[]],
             receive_forwardings_from_committee_ids: [[]]
         };
@@ -259,15 +263,13 @@ export class CommitteeEditComponent extends BaseModelContextComponent implements
         this.committeeForm.patchValue(committee.committee);
 
         if (this.committeeId && committee.users?.length) {
-            const committeeManagers = committee.users.filter(
-                user => user.committee_management_level(this.committeeId) === CML.can_manage
-            );
+            const committeeManagers = committee.getManagers();
             this.managerIdCtrl.patchValue(committeeManagers.map(user => user.id));
         }
     }
 
     private requestUpdates(): void {
-        this.requestModels(
+        this.subscribe(
             {
                 viewModelCtor: ViewOrganization,
                 ids: [ORGANIZATION_ID],
@@ -285,7 +287,7 @@ export class CommitteeEditComponent extends BaseModelContextComponent implements
 
     private async fetchUsers(): Promise<void> {
         const userIds = await this.memberService.fetchAllOrgaUsers();
-        await this.requestModels(
+        await this.subscribe(
             {
                 viewModelCtor: ViewUser,
                 ids: userIds,

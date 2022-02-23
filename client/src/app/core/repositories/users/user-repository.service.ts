@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { UserAction } from 'app/core/actions/user-action';
+import { Action } from 'app/core/core-services/action.service';
 import {
     DEFAULT_FIELDSET,
     Fieldsets,
-    SimplifiedModelRequest
+    SimplifiedModelRequest,
+    TypedFieldset
 } from 'app/core/core-services/model-request-builder.service';
 import { PreventedInDemo } from 'app/core/definitions/custom-errors';
 import { Id } from 'app/core/definitions/key-types';
@@ -15,7 +17,6 @@ import { User } from 'app/shared/models/users/user';
 import { toDecimal } from 'app/shared/utils/to-decimal';
 import { ViewUser } from 'app/site/users/models/view-user';
 
-import { Meeting } from '../../../shared/models/event-management/meeting';
 import { Displayable } from '../../../site/base/displayable';
 import { BaseRepositoryWithActiveMeeting } from '../base-repository-with-active-meeting';
 import { ModelRequestRepository } from '../model-request-repository';
@@ -51,6 +52,7 @@ interface NameInformation {
     last_name?: string;
 }
 interface ShortNameInformation extends NameInformation {
+    pronoun?: string;
     title?: string;
 }
 
@@ -84,7 +86,7 @@ export class UserRepositoryService
      */
     protected sortProperty: UserSortProperty;
 
-    private demoModeUserIds: number[] | null = null;
+    private _demoModeUserIds: number[] | null = null;
 
     public constructor(
         repositoryServiceCollector: RepositoryServiceCollector,
@@ -96,19 +98,14 @@ export class UserRepositoryService
             this.sortProperty = conf;
             this.setConfigSortFn();
         });
-        // TODO
-        /*this.constantsService.get<any>('Settings').subscribe(settings => {
-            if (settings) {
-                this.demoModeUserIds = settings.DEMO_USERS || null;
-            }
-        });*/
     }
 
     public getFieldsets(): Fieldsets<User> {
-        const shortNameFields: (keyof User | { templateField: keyof User })[] = [
+        const shortNameFields: TypedFieldset<User> = [
             `title`,
             `first_name`,
             `last_name`,
+            `pronoun`,
             `username` /* Required! To getShortName */
         ];
         const singleVotesFields = shortNameFields.concat([
@@ -204,13 +201,22 @@ export class UserRepositoryService
             about_me_$: {
                 [this.activeMeetingId]: update.about_me
             },
-            username: update.username
+            username: update.username,
+            pronoun: update.pronoun,
+            gender: update.gender
         };
         return this.sendActionToBackend(UserAction.UPDATE_SELF, payload);
     }
 
+    public delete(...users: Identifiable[]): Action<void> {
+        this.preventInDemo();
+        const data: UserAction.DeletePayload[] = users.map(user => ({ id: user.id }));
+        return this.actions.create({ action: UserAction.DELETE, data });
+    }
+
     private getBaseUserPayload(partialUser: any): Partial<UserAction.BaseUserPayload> {
         let partialPayload: Partial<UserAction.BaseUserPayload> = {
+            pronoun: partialUser.pronoun,
             title: partialUser.title,
             first_name: partialUser.first_name,
             last_name: partialUser.last_name,
@@ -258,7 +264,7 @@ export class UserRepositoryService
     /**
      * getter for the name
      */
-    public getName(user: NameInformation): string {
+    private getName(user: NameInformation): string {
         const firstName = user.first_name?.trim() || ``;
         const lastName = user.last_name?.trim() || ``;
         const userName = user.username?.trim() || ``;
@@ -281,7 +287,11 @@ export class UserRepositoryService
         let fullName = this.getShortName(user);
         const additions: string[] = [];
 
-        // addition: add number and structure level
+        // addition: add pronoun, structure level and number
+        if (user.pronoun) {
+            additions.push(user.pronoun);
+        }
+
         const structure_level = user.structure_level ? user.structure_level() : null;
         if (structure_level) {
             additions.push(structure_level);
@@ -350,7 +360,7 @@ export class UserRepositoryService
         viewModel.getFullName = () => this.getFullName(viewModel);
         viewModel.getLevelAndNumber = () => this.getLevelAndNumber(viewModel);
         viewModel.getEnsuredActiveMeetingId = () => {
-            const meetingId = this.activeMeetingIdService.meetingId;
+            const meetingId = this.activeMeetingId;
             if (!meetingId) {
                 // throw new Error('No active meeting selected!'); // TODO: What is with "real" users?
             }
@@ -423,16 +433,6 @@ export class UserRepositoryService
         this.preventInDemo();
         const payload: UserAction.GenerateNewPasswordPayload[] = users.map(user => ({ id: user.id }));
         return this.sendBulkActionToBackend(UserAction.GENERATE_NEW_PASSWORD, payload);
-    }
-
-    public delete(...users: ViewUser[]): Promise<void> {
-        this.preventInDemo();
-        const payload: UserAction.DeletePayload[] = users.map(user => ({ id: user.id }));
-        return this.sendBulkActionToBackend(UserAction.DELETE, payload);
-    }
-
-    public remove(meeting: Meeting, ...users: ViewUser[]): Promise<void> {
-        return this.bulkRemoveGroupsFromUsers(users, meeting.group_ids);
     }
 
     /**
@@ -512,16 +512,16 @@ export class UserRepositoryService
         return this.sendBulkActionToBackend(UserAction.UPDATE, userPatch);
     }
 
-    public bulkRemoveUserFromMeeting(users: ViewUser[], meeting: ViewMeeting): Promise<void> {
+    public bulkRemoveUserFromMeeting(users: ViewUser[], meetingIdentifiable: Identifiable): Action<void> {
         const userPatch = users.map(user => {
             return {
                 id: user.id,
                 group_$_ids: {
-                    [meeting.id]: []
+                    [meetingIdentifiable.id]: []
                 }
             };
         });
-        return this.sendBulkActionToBackend(UserAction.UPDATE, userPatch);
+        return this.actions.create({ action: UserAction.UPDATE, data: userPatch });
     }
 
     /**
@@ -776,16 +776,16 @@ export class UserRepositoryService
 
     private preventAlterationOnDemoUsers(users: ViewUser | ViewUser[]): void {
         if (Array.isArray(users)) {
-            if (this.demoModeUserIds && users.map(user => user.id).intersect(this.demoModeUserIds).length > 0) {
+            if (this._demoModeUserIds && users.map(user => user.id).intersect(this._demoModeUserIds).length > 0) {
                 this.preventInDemo();
             }
-        } else if (this.demoModeUserIds?.some(userId => userId === users.id)) {
+        } else if (this._demoModeUserIds?.some(userId => userId === users.id)) {
             this.preventInDemo();
         }
     }
 
     private preventInDemo(): void {
-        if (this.demoModeUserIds && this.demoModeUserIds.length) {
+        if (this._demoModeUserIds && this._demoModeUserIds.length) {
             throw new PreventedInDemo();
         }
     }

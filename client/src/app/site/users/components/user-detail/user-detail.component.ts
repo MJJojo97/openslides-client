@@ -4,6 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { SpecificStructuredField } from 'app/core/core-services/model-request-builder.service';
 import { OperatorService } from 'app/core/core-services/operator.service';
 import { Permission } from 'app/core/core-services/permission';
+import { GetUserScopePresenterService } from 'app/core/core-services/presenters/get-user-scope-presenter.service';
 import { Id } from 'app/core/definitions/key-types';
 import { GroupRepositoryService } from 'app/core/repositories/users/group-repository.service';
 import { UserRepositoryService } from 'app/core/repositories/users/user-repository.service';
@@ -15,7 +16,6 @@ import { BaseModelContextComponent } from 'app/site/base/components/base-model-c
 import { PollService } from 'app/site/polls/services/poll.service';
 import { BehaviorSubject, combineLatest } from 'rxjs';
 
-import { ActiveMeetingService } from '../../../../core/core-services/active-meeting.service';
 import { MemberService } from '../../../../core/core-services/member.service';
 import { PERSONAL_FORM_CONTROLS, UserService } from '../../../../core/ui-services/user.service';
 import { ViewGroup } from '../../models/view-group';
@@ -137,9 +137,9 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
         private groupRepo: GroupRepositoryService,
         private pollService: PollService,
         private meetingSettingsService: MeetingSettingsService,
-        private activeMeetingService: ActiveMeetingService,
         private userService: UserService,
         private memberService: MemberService,
+        private presenter: GetUserScopePresenterService,
         private cd: ChangeDetectorRef
     ) {
         super(componentServiceCollector, translate);
@@ -179,9 +179,9 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
     }
 
     private async loadUserById(): Promise<void> {
-        const meetingId = this.activeMeetingIdService.meetingId;
+        const meetingId = this.activeMeetingId;
         if (meetingId) {
-            await this.requestModels({
+            await this.subscribe({
                 viewModelCtor: ViewUser,
                 ids: [this._userId],
                 follow: [
@@ -217,7 +217,7 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
                 }
             }),
             this.operator.operatorUpdatedEvent.subscribe(
-                async () => (this._isUserInScope = await this.userService.isUserInScope(this._userId))
+                async () => (this._isUserInScope = await this.userService.isUserInSameScope(this._userId))
             )
         );
     }
@@ -271,10 +271,10 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
      */
     public async setEditMode(edit: boolean): Promise<void> {
         if (!this.hasSubscription(`edit subscription`)) {
-            await this.requestModels(
+            await this.subscribe(
                 {
                     viewModelCtor: ViewMeeting,
-                    ids: [this.activeMeetingIdService.meetingId],
+                    ids: [this.activeMeetingId],
                     follow: [`group_ids`, { idField: `user_ids`, fieldset: `shortName` }]
                 },
                 `edit subscription`
@@ -282,7 +282,7 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
         }
 
         if (!this.newUser && edit) {
-            this._isUserInScope = await this.userService.isUserInScope(this._userId);
+            this._isUserInScope = await this.userService.isUserInSameScope(this._userId);
         }
 
         this.isEditingSubject.next(edit);
@@ -297,7 +297,7 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
      * click on the delete user button
      */
     public async deleteUserButton(): Promise<void> {
-        if (await this.memberService.delete([this.user])) {
+        if (await this.memberService.doDeleteOrRemove({ toDelete: [this.user], toRemove: [] })) {
             this.goToAllUsers();
         }
     }
@@ -345,10 +345,7 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
         if (partialUser.is_present) {
             partialUser.is_present_in_meeting_ids = [this.activeMeetingId];
         }
-        if (!partialUser.group_ids?.length) {
-            const defaultGroupId = this.activeMeetingService.meeting.default_group_id;
-            partialUser.group_ids = [defaultGroupId];
-        }
+        this.checkForGroups(partialUser);
 
         await this.repo.create(partialUser);
         this.goToAllUsers();
@@ -356,11 +353,19 @@ export class UserDetailComponent extends BaseModelContextComponent implements On
 
     private async updateUser(): Promise<void> {
         if (this.operator.hasPerms(Permission.userCanManage)) {
+            this.checkForGroups(this.personalInfoFormValue);
             await this.repo.update(this.personalInfoFormValue, this.user);
         } else {
             await this.repo.updateSelf(this.personalInfoFormValue, this.user);
         }
         this.setEditMode(false);
+    }
+
+    private checkForGroups(user: any): void {
+        if (!user?.group_ids.length) {
+            const defaultGroupId = this.activeMeetingService.meeting.default_group_id;
+            user.group_ids = [defaultGroupId];
+        }
     }
 
     private checkFormForErrors(): void {

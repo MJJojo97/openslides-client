@@ -3,7 +3,6 @@ import { ViewMeeting } from 'app/management/models/view-meeting';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { distinctUntilChanged, first } from 'rxjs/operators';
 
-import { Id } from '../definitions/key-types';
 import { MeetingRepositoryService } from '../repositories/management/meeting-repository.service';
 import { BannerDefinition, BannerService } from '../ui-services/banner.service';
 import { ActiveMeetingIdService } from './active-meeting-id.service';
@@ -125,10 +124,10 @@ export class ActiveMeetingService {
     }
 
     private closeModelSubscriptions(): void {
-        for (const subscription of this._modelAutoupdateSubscriptions) {
-            subscription.close();
+        while (this._modelAutoupdateSubscriptions.length > 0) {
+            const subscription = this._modelAutoupdateSubscriptions.shift();
+            subscription?.close();
         }
-        this._modelAutoupdateSubscriptions = [];
     }
 
     /**
