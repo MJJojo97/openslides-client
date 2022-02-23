@@ -60,20 +60,37 @@
                             <i *ngIf="!option.content_object">{{ unknownUserLabel | translate }}</i>
                         </div>
 
-                        <div *ngFor="let action of voteActions">
-                            <button
-                                class="vote-button"
-                                mat-raised-button
-                                (click)="saveSingleVote(option.id, action.vote, delegation)"
-                                [disabled]="isDeliveringVote(delegation)"
-                                [ngClass]="getActionButtonClass(action, option, delegation)"
-                            >
-                                <mat-icon>{{ action.icon }}</mat-icon>
-                            </button>
-                            <span *ngIf="poll.isMethodYN || poll.isMethodYNA" class="vote-label">
-                                {{ action.label | translate }}
-                            </span>
-                        </div>
+                        <ng-container *ngIf="!poll.moreThanOneVotePerPerson">
+                            <div *ngFor="let action of voteActions">
+                                <button
+                                    class="vote-button"
+                                    mat-raised-button
+                                    (click)="saveSingleVote(option.id, action.vote, delegation)"
+                                    [disabled]="isDeliveringVote(delegation)"
+                                    [ngClass]="getActionButtonClass(action, option, delegation)"
+                                >
+                                    <mat-icon>{{ action.icon }}</mat-icon>
+                                </button>
+                                <span *ngIf="poll.isMethodYN || poll.isMethodYNA" class="vote-label">
+                                    {{ action.label | translate }}
+                                </span>
+                            </div>
+                        </ng-container>
+                        <ng-container *ngIf="poll.moreThanOneVotePerPerson">
+                            <input
+                                type="number"
+                                matInput
+                                placeholder="{{ PollPropertyVerbose.max_votes_per_person | translate }}"
+                                (change)="saveMultipleVote(option.id, $event, delegation)"
+                                min="0"
+                                max="{{poll.max_votes_per_person}}"
+                                value="0"
+                                required
+                                [errorStateMatcher]="parentErrorStateMatcher"
+                            />
+                            <!-- formControlName="voteRequestData[user.id].value" -->
+                        </ng-container>
+                        
                     </div>
                     <mat-divider *ngIf="poll.options.length - 1 > i"></mat-divider>
                 </div>
@@ -98,7 +115,8 @@
                         </span>
                     </div>
 
-                    <ng-container *ngIf="!poll.moreThanOneVotePerPerson">
+                    <!-- ------------------------------------------------------ -->
+                    <!-- <ng-container *ngIf="!poll.moreThanOneVotePerPerson">
                         <div *ngFor="let action of voteActions" >
                             <button
                                 class="vote-button"
@@ -127,7 +145,7 @@
                             required
                             [errorStateMatcher]="parentErrorStateMatcher"
                         />
-                        <!-- formControlName="voteRequestData[user.id].value" -->
+                        < !-- formControlName="voteRequestData[user.id].value" -- >
                     </ng-container>
                     
                 </div>
@@ -135,7 +153,7 @@
             </div>
         </div>
 
-        <!-- global yes/no/abstain -->
+        < !-- global yes/no/abstain -- >
         <ng-container *ngIf="(poll.isMethodY || poll.isMethodN) && poll.hasGlobalOptionEnabled">
             <mat-divider></mat-divider>
             <div class="global-option-grid">
@@ -152,7 +170,8 @@
                     <span class="vote-label">
                         {{ PollPropertyVerbose.global_yes | translate }}
                     </span>
-                </div>
+                </div> -->
+                    <!-- ------------------------------------------------------ -->
                     <div *ngIf="poll.global_no">
                         <button
                             class="vote-button"
