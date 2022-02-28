@@ -76,11 +76,12 @@
                                 </span>
                             </div>
                         </ng-container>
-                        <ng-container *ngIf="poll.moreThanOneVotePerPerson">
+                        <mat-form-field appearance="outline" *ngIf="poll.moreThanOneVotePerPerson">
                             <input
                                 type="number"
                                 matInput
-                                placeholder="{{ PollPropertyVerbose.max_votes_per_person | translate }}"
+                                
+                                [formControl]="getFormControl(option.id)"
                                 (change)="saveMultipleVote(option.id, $event, delegation)"
                                 min="0"
                                 max="{{poll.max_votes_per_person}}"
@@ -88,8 +89,17 @@
                                 required
                                 [errorStateMatcher]="parentErrorStateMatcher"
                             />
+                            <mat-error *ngIf="isErrorInVoteEntry(option.id)">
+                                {{ 'Invalid Input.' | translate }}
+                            </mat-error>
+
+                            <!-- formControl="formControls[option.id]" -->
+
+                            <!-- *ngIf="isErrorInVoteEntry(option.id)"> -->
+
+                            <!-- placeholder="{{ PollPropertyVerbose.max_votes_per_person | translate }}" -->
                             <!-- formControlName="voteRequestData[user.id].value" -->
-                        </ng-container>
+                        </mat-form-field>
                         
                     </div>
                     <mat-divider *ngIf="poll.options.length - 1 > i"></mat-divider>
